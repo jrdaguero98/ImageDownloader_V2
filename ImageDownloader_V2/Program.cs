@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using System.Text;
 using static System.Environment;
+using Microsoft.Extensions.Configuration;
 
 namespace ImageDownloader
 {
@@ -28,22 +29,29 @@ namespace ImageDownloader
     public class ImageDownloader
     {
         public HttpClient HttpClient { get; set; } = new HttpClient();
-        readonly Dictionary<string, string> reemplazos = new()
-        {
-            { "<", "＜" },
-            { ">", "＞" },
-            { ":", "꞉" },
-            { "\"", "”" },
-            { "/", "∕" },
-            { "\\", "⏐" },
-            { "|", "⏐" },
-            { "?", "？" },
-            { "\n", "" },
-        };
-
+        
         string html = string.Empty;
         HtmlDocument htmlDocument;
         string rutaDescargas = string.Empty;
+        
+        private readonly IConfiguration config;
+        
+        private readonly List<string> ListaCaracteresInvalidos;
+        private readonly List<string> ListaExtensionesPermitidas;
+
+        public ImageDownloader()
+        {
+            htmlDocument = new HtmlDocument();
+
+            var builder = new ConfigurationBuilder();
+            builder.SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+            config = builder.Build();
+            
+            ListaCaracteresInvalidos = config.GetSection("CaracteresInvalidos").Get<List<string>>();
+            ListaExtensionesPermitidas = config.GetSection("ExtensionesPermitidas").Get<List<string>>();
+        }
 
         public void ConfigurarRutaGuardado()
         {
@@ -161,7 +169,7 @@ namespace ImageDownloader
                 var imageUrl = imageNode.Attributes["src"].Value;
                 var ext = Path.GetExtension(imageUrl);
 
-                if (ext.ToUpper() != ".JPG" && ext.ToUpper() != ".JPEG")
+                if (!ListaExtensionesPermitidas.Contains(ext.ToLower()))
                     continue;
 
                 imageUrls.Add(imageUrl);
@@ -195,7 +203,7 @@ namespace ImageDownloader
             StringBuilder nuevoTitulo = new StringBuilder();
             foreach (char caracter in titulo)
             {
-                nuevoTitulo.Append(reemplazos.ContainsKey(caracter.ToString()) ? " " : caracter);                
+                nuevoTitulo.Append(ListaCaracteresInvalidos.Contains(caracter.ToString()) ? " " : caracter);                
             }
             return nuevoTitulo.ToString();
         }
