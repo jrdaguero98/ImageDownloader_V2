@@ -136,7 +136,7 @@ namespace ImageDownloader
                     try
                     {
                         int currentTaskIndex = Interlocked.Increment(ref i);
-                        var filename = $"0{currentTaskIndex}{Path.GetExtension(imageUrl)}";
+                        var filename = $"{currentTaskIndex:D4}{Path.GetExtension(imageUrl)}";
                         var destinationPath = Path.Combine(destinationFolder, filename);
 
                         //Console.Write($"Descargando: {imageUrl} - ");
